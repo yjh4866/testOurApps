@@ -55,11 +55,7 @@
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
     // Return YES for supported orientations
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
-        return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
-    } else {
-        return YES;
-    }
+    return YES;
 }
 
 
@@ -68,7 +64,7 @@
 - (void)clickButton1:(id)sender
 {
     OurAppsVC *ourAppsVC = [[OurAppsVC alloc] init];
-    ourAppsVC.appleID = @"441076723";
+    ourAppsVC.artistID = @"441076723";
     ourAppsVC.delegate = self;
     //
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:ourAppsVC];
@@ -85,7 +81,7 @@
 - (void)clickButton2:(id)sender
 {
     OurAppsVC *ourAppsVC = [[OurAppsVC alloc] init];
-    ourAppsVC.appleID = @"446324237";
+    ourAppsVC.artistID = @"446324237";
     ourAppsVC.delegate = self;
     [self.navigationController pushViewController:ourAppsVC animated:YES];
     [ourAppsVC release];
@@ -94,8 +90,8 @@
 
 #pragma mark - OurAppsVCDelegate
 
-// 返回
-- (void)ourAppsVCBack:(OurAppsVC *)ourAppsVC
+// 关闭
+- (void)ourAppsVCClose:(OurAppsVC *)ourAppsVC
 {
     if ([UIDevice systemVersionID] < __IPHONE_5_0) {
         [self dismissModalViewControllerAnimated:YES];
@@ -106,9 +102,9 @@
 }
 
 // 应用项被点击
-- (void)ourAppsVC:(OurAppsVC *)ourAppsVC clickAppItem:(DataAppItem *)dataAppItem
+- (void)ourAppsVC:(OurAppsVC *)ourAppsVC clickAppItem:(AppInfoItem *)appInfoItem
 {
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:dataAppItem.appURL]];
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:appInfoItem.appUrl]];
 }
 
 @end

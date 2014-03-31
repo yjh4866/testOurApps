@@ -2,38 +2,30 @@
 //  OurAppsVC.m
 //  
 //
-//  Created by 建红 杨 on 12-2-24.
-//  Copyright (c) 2012年 __MyCompanyName__. All rights reserved.
+//  Created by yangjh on 14-3-31.
+//
 //
 
 #import "OurAppsVC.h"
-#import "TableViewAppItemCell.h"
+#import "AppItemCell.h"
 #import "UIView+MBProgressHUD.h"
-#import "ProductMan.h"
+#import "AppManager.h"
 
 
-@interface OurAppsVC () <UITableViewDataSource, UITableViewDelegate,
-ProductManDelegate> {
+@interface OurAppsVC () <UITableViewDataSource, UITableViewDelegate, AppManagerDelegate> {
     
-    //
-    UITableView *_tableviewAppList;
-    //
-    BOOL _biPhoneAppList;        //当前是否显示iPhone应用列表
-    BOOL _bLoadiPadAppList;      //是否已经加载过iPad应用列表（切换到iPad时的判断）
-    BOOL _bSendiPhoneAppList;    //是否已经发送过获取iPhone应用列表的请示
-    BOOL _bReceiveiPhoneAppList; //是否已经收到iPhone应用列表数据
-    BOOL _bSendiPadAppList;      //是否已经发送过获取iPad应用列表的请求
-    BOOL _bReceiveiPadAppList;   //是否已经收到iPad应用列表数据
-    //
-    NSMutableArray *_marrayiPhoneAppItem;
-    NSMutableArray *_marrayiPadAppItem;
+    UITableView *_tableViewApp;
     
-    //产品管家
-    ProductMan *_productMan;
+    // 应用管理
+    AppManager *_appManager;
+    //
+    NSMutableArray *_marriPhoneApp;
+    NSMutableArray *_marriPadApp;
 }
-- (void)getAppList;
-@end
 
+@property (nonatomic, assign) BOOL iPhoneAppList;
+
+@end
 
 @implementation OurAppsVC
 
@@ -42,352 +34,185 @@ ProductManDelegate> {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
         // Custom initialization
+        self.iPhoneAppList = YES;
         //
-        _biPhoneAppList = YES;
-        _bLoadiPadAppList = NO;
-        _bSendiPhoneAppList = NO;
-        _bReceiveiPhoneAppList = NO;
-        _bSendiPadAppList = NO;
-        _bReceiveiPadAppList = NO;
-        _marrayiPhoneAppItem = [[NSMutableArray alloc] initWithCapacity:5];
-        _marrayiPadAppItem = [[NSMutableArray alloc] initWithCapacity:5];
-        //产品管家
-        _productMan = [[ProductMan alloc] init];
-        _productMan.delegate = self;
+        _marriPhoneApp = [[NSMutableArray alloc] initWithCapacity:5];
+        _marriPadApp = [[NSMutableArray alloc] initWithCapacity:5];
+        // 应用管理
+        _appManager = [[AppManager alloc] init];
+        _appManager.delegate = self;
     }
     return self;
 }
 
-- (void)dealloc
+- (void)viewDidLoad
 {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
     //
-    [_tableviewAppList release];
-    //
-    [_marrayiPhoneAppItem release];
-    [_marrayiPadAppItem release];
-    _productMan.delegate = nil;
-    [_productMan release];
-    //
-    self.appleID = nil;
+    self.navigationItem.title = @"产品列表";
+    // 当前为导航栏根视图控制器，另外添加一个关闭按钮
+    if (self.navigationController.viewControllers[0] == self) {
+        UIBarButtonItem *itemClose = [[UIBarButtonItem alloc] initWithTitle:@"关闭"
+                                                                      style:UIBarButtonItemStyleBordered
+                                                                     target:self
+                                                                     action:@selector(clickClose)];
+        self.navigationItem.leftBarButtonItem = itemClose;
+        [itemClose release];
+    }
+    // 导航栏右边的按钮用于刷新
+    UIBarButtonItem *itemRefresh = [[UIBarButtonItem alloc]
+                                    initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh
+                                    target:self
+                                    action:@selector(clickRefresh)];
+    self.navigationItem.rightBarButtonItem = itemRefresh;
+    [itemRefresh release];
     
-    [super dealloc];
+    //
+    if (nil == _tableViewApp) {
+        _tableViewApp = [[UITableView alloc] initWithFrame:self.view.bounds
+                                                     style:UITableViewStylePlain];
+        _tableViewApp.dataSource = self;
+        _tableViewApp.delegate = self;
+    }
+    [self.view addSubview:_tableViewApp];
+    
+    // 如果是iPad，也要获取iPad版本
+    NSRange range = [[UIDevice currentDevice].model rangeOfString:@"iPad"];
+    if (NSNotFound != range.location) {
+        //iPhone、iPad列表切换按钮放在导航栏上
+        UISegmentedControl *segCtrl = [[UISegmentedControl alloc] initWithItems:@[@"iPad", @"iPhone"]];
+        segCtrl.frame = CGRectMake(0, 0, 165, 32);
+        segCtrl.segmentedControlStyle = UISegmentedControlStyleBar;
+        [segCtrl addTarget:self action:@selector(clickSwitch:)
+          forControlEvents:UIControlEventValueChanged];
+        segCtrl.selectedSegmentIndex = 0;
+        self.navigationItem.titleView = segCtrl;
+        [segCtrl release];
+        //
+        self.iPhoneAppList = NO;
+    }
+    
+    [self clickRefresh];
 }
 
 - (void)didReceiveMemoryWarning
 {
-    // Releases the view if it doesn't have a superview.
     [super didReceiveMemoryWarning];
-    
-    // Release any cached data, images, etc that aren't in use.
-}
-
-#pragma mark - View lifecycle
-
-
-// Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
-- (void)viewDidLoad
-{
-    [super viewDidLoad];
-    //
-    self.navigationItem.title = @"产品列表";
-    //导航栏左边的按钮用于返回
-    if ([self.navigationController.viewControllers objectAtIndex:0] == self) {
-        UIBarButtonItem *itemBack = [[UIBarButtonItem alloc] initWithTitle:@"返回" 
-                                                                     style:UIBarButtonItemStyleBordered 
-                                                                    target:self 
-                                                                    action:@selector(clickBack:)];
-        self.navigationItem.leftBarButtonItem = itemBack;
-        [itemBack release];
-    }
-    //导航栏右边的按钮用于刷新
-    UIBarButtonItem *itemUpdate = [[UIBarButtonItem alloc] 
-                                   initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh 
-                                   target:self 
-                                   action:@selector(clickUpdate:)];
-    self.navigationItem.rightBarButtonItem = itemUpdate;
-    [itemUpdate release];
-    //显示产品项用的表格
-    if (nil == _tableviewAppList) {
-        _tableviewAppList = [[UITableView alloc] initWithFrame:self.view.bounds];
-        _tableviewAppList.dataSource = self;
-        _tableviewAppList.delegate = self;
-    }
-    [self.view addSubview:_tableviewAppList];
-    
-    //
-    [self getAppList];
-    //如果是iPad，也要获取iPad版本
-    NSString *strDeviceModel = [UIDevice currentDevice].model;
-    NSRange range = [strDeviceModel rangeOfString:@"iPad"];
-    if (range.location != NSNotFound) {
-        //iPhone、iPad列表切换按钮放在导航栏上
-        NSArray *arrayItem = [[NSArray alloc] initWithObjects:@"iPhone", @"iPad", nil];
-        UISegmentedControl *segmt = [[UISegmentedControl alloc] initWithItems:arrayItem];
-        segmt.frame = CGRectMake(0, 12, 165, 28);
-        segmt.segmentedControlStyle = UISegmentedControlStyleBar;
-        [segmt addTarget:self action:@selector(clickSwitch:) forControlEvents:UIControlEventValueChanged];
-        segmt.selectedSegmentIndex = 0;
-        self.navigationItem.titleView = segmt;
-        [segmt release];
-        [arrayItem release];
-    }
-}
-
-
-- (void)viewDidUnload
-{
-    [super viewDidUnload];
-    // Release any retained subviews of the main view.
-    // e.g. self.myOutlet = nil;
+    // Dispose of any resources that can be recreated.
 }
 
 - (void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:animated];
-    //
-    _tableviewAppList.frame = self.view.bounds;
+    
+    _tableViewApp.frame = self.view.bounds;
 }
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+- (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
 {
-    // Return YES for supported orientations
-    return (interfaceOrientation == UIInterfaceOrientationPortrait);
+    [super willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
+    
+    _tableViewApp.frame = self.view.bounds;
+}
+
+- (void)dealloc
+{
+    //
+    self.artistID = nil;
+    //
+    [_tableViewApp release];
+    //
+    _appManager.delegate = nil;
+    [_appManager release];
+    [_marriPhoneApp release];
+    [_marriPadApp release];
+    
+    [super dealloc];
 }
 
 
 #pragma mark - ClickEvent
 
-- (void)clickBack:(id)sender
+- (void)clickClose
 {
-    [self.delegate ourAppsVCBack:self];
+    [self.delegate ourAppsVCClose:self];
 }
 
-- (void)clickUpdate:(id)sender
+- (void)clickSwitch:(UISegmentedControl *)segCtrl
 {
-    [self getAppList];
+    // 只有iPad才会调用到这里，第一项是iPad，最后一项是iPhone
+    self.iPhoneAppList = (segCtrl.numberOfSegments-1)==segCtrl.selectedSegmentIndex;
+    [_tableViewApp reloadData];
 }
 
-- (void)clickSwitch:(id)sender
+- (void)clickRefresh
 {
-	if ([sender isMemberOfClass:UISegmentedControl.class]) {
-		UISegmentedControl *segmt = (UISegmentedControl*)sender;
-		int indexSel = segmt.selectedSegmentIndex;
-		//
-		switch (indexSel) {
-            case 0:
-            {
-                _biPhoneAppList = YES;
-                //发送了iPhone应用列表请求，并且没有收到数据，则显示加载框
-                if (_bSendiPhoneAppList && !_bReceiveiPhoneAppList) {
-                    [self.view showActivityWithText:NSLocalizedString(@"Loading...", nil)];
-                }
-                else {
-                    [self.view hideActivity];
-                }
-            }
-                break;
-            case 1:
-            {
-                _biPhoneAppList = NO;
-                //没有加载过iPad应用列表则加载
-                //只有没加载过，才能通过切换的方式获取iPad应用列表
-                //否则只能通过刷新的方式
-                if (!_bLoadiPadAppList) {
-                    [self getAppList];
-                    _bLoadiPadAppList = YES;
-                }
-                //发送了iPad应用列表请求，并且没有收到数据，则显示加载框
-                if (_bSendiPadAppList && !_bReceiveiPadAppList) {
-                    [self.view showActivityWithText:NSLocalizedString(@"Loading...", nil)];
-                }
-                else {
-                    [self.view hideActivity];
-                }
-            }
-                break;
-            default:
-                break;
-        }
-        //
-        [_tableviewAppList reloadData];
-    }
+    [self.view showActivityWithText:@"加载中..."];
+    [_appManager getAppListOf:self.artistID];
 }
 
 
-#pragma mark -
-#pragma mark UITableViewDataSource
+#pragma mark - UITableViewDataSource
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    if (_biPhoneAppList) {
-        return _marrayiPhoneAppItem.count;
-    }
-    else {
-        return _marrayiPadAppItem.count;
-    }
+    return self.iPhoneAppList?_marriPhoneApp.count:_marriPadApp.count;
 }
-
-// Row display. Implementers should *always* try to reuse cells by setting each cell's reuseIdentifier and querying for available reusable cells with dequeueReusableCellWithIdentifier:
-// Cell gets various attributes set automatically based on table (separators) and data source (accessory views, editing controls)
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    DataAppItem *dataAppItem = nil;
-    if (_biPhoneAppList) {
-        dataAppItem = [_marrayiPhoneAppItem objectAtIndex:indexPath.row];
-    }
-    else {
-        dataAppItem = [_marrayiPadAppItem objectAtIndex:indexPath.row];
-    }
-    
-    //
-    NSString *strAppItemCell = @"AppItemCell";
-    TableViewAppItemCell *cellAppItem = [tableView dequeueReusableCellWithIdentifier:strAppItemCell];
+    static NSString *CellIdentifier = @"AppItemCell";
+    AppItemCell *cellAppItem = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
     if (nil == cellAppItem) {
-        cellAppItem = [[[TableViewAppItemCell alloc] initWithStyle:UITableViewCellStyleDefault 
-                                                   reuseIdentifier:strAppItemCell] autorelease];
+        cellAppItem = [[[AppItemCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier] autorelease];
     }
     //
-    if (nil == dataAppItem.appIcon) {
-        //下载应用图标
-        [_productMan downloadAppIcon:dataAppItem.appID with:dataAppItem.appIconURL];
+    NSArray *arrAppInfo = self.iPhoneAppList?_marriPhoneApp:_marriPadApp;
+    if (indexPath.row < arrAppInfo.count) {
+        cellAppItem.appInfo = arrAppInfo[indexPath.row];
     }
-    //
-    cellAppItem.dataAppItem = dataAppItem;
     
     return cellAppItem;
 }
 
 
-#pragma mark -
-#pragma mark UITableViewDelegate
+#pragma mark - UITableViewDelegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return HEIGHT_APPITEMCELL;
+    return Height_AppItemCell;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    if ([self.delegate respondsToSelector:@selector(ourAppsVC:clickAppItem:)]) {
-        //
-        NSArray *array = _biPhoneAppList ? _marrayiPhoneAppItem : _marrayiPadAppItem;
-        DataAppItem *dataAppItem = [array objectAtIndex:indexPath.row];
-        //点击到某应用
-        [self.delegate ourAppsVC:self clickAppItem:dataAppItem];
-    }
     //
-    UITableViewCell *cellSelected = [tableView cellForRowAtIndexPath:indexPath];
-    cellSelected.selected = NO;
+    NSArray *arrAppInfo = self.iPhoneAppList?_marriPhoneApp:_marriPadApp;
+    if (indexPath.row < arrAppInfo.count) {
+        [self.delegate ourAppsVC:self clickAppItem:arrAppInfo[indexPath.row]];
+    }
 }
 
 
-#pragma mark - ProductManDelegate
+#pragma mark - AppManagerDelegate
 
-// 我们的iPhone应用列表获取成功
-- (void)productMan:(ProductMan *)productMan iPhoneAppListSuccess:(NSArray *)arrayAppList
+// 获取应用列表失败
+- (void)appManager:(AppManager *)appManager appListFailure:(NSError *)error
+              with:(NSString *)artistID
 {
-    _bReceiveiPhoneAppList = YES;
-    _bSendiPhoneAppList = NO;
+    [self.view hideActivity];
+    [self.view showTextNoActivity:error.localizedDescription timeLength:1.0f];
+}
+
+// 获取到iPhone应用列表和iPad应用列表
+- (void)appManager:(AppManager *)appManager appListSuccessWith:(NSString *)artistID
+ withiPhoneAppList:(NSArray *)arriPhoneApp andiPadApplist:(NSArray *)arriPadApp
+{
+    [self.view hideActivity];
+    [_marriPhoneApp setArray:arriPhoneApp];
+    [_marriPadApp setArray:arriPadApp];
     //
-    [_marrayiPhoneAppItem setArray:arrayAppList];
-    //iPhone应用列表状态则刷新表格
-    if (_biPhoneAppList) {
-        [_tableviewAppList reloadData];
-    }
-    
-    [self.view hideActivity];
-}
-
-// 我们的iPhone应用列表获取失败
-- (void)productManiPhoneAppListFailure:(ProductMan *)productMan
-{
-    _bReceiveiPhoneAppList = YES;
-    _bSendiPhoneAppList = NO;
-    
-    [self.view hideActivity];
-}
-
-// 我们的iPad应用列表获取成功
-- (void)productMan:(ProductMan *)productMan iPadAppListSuccess:(NSArray *)arrayAppList
-{
-    _bReceiveiPadAppList = YES;
-    _bSendiPadAppList = NO;
-    //
-    [_marrayiPadAppItem setArray:arrayAppList];
-    //iPad应用列表状态则刷新表格
-    if (!_biPhoneAppList) {
-        [_tableviewAppList reloadData];
-    }
-    
-    [self.view hideActivity];
-}
-
-// 我们的iPad应用列表获取失败
-- (void)productManiPadAppListFailure:(ProductMan *)productMan
-{
-    _bReceiveiPadAppList = YES;
-    _bSendiPadAppList = NO;
-    
-    [self.view hideActivity];
-}
-
-// 应用图标下载成功
-- (void)productMan:(ProductMan *)productMan downloadAppIconSuccess:(UIImage *)imageAppIcon of:(NSString *)appID
-{
-    //找到相应的应用数据
-    NSArray *array = _biPhoneAppList ? _marrayiPhoneAppItem : _marrayiPadAppItem;
-    for (DataAppItem *dataAppItem in array) {
-        if ([appID isEqualToString:dataAppItem.appID]) {
-            //设置应用图标
-            dataAppItem.appIcon = imageAppIcon;
-            //刷新表格
-            [_tableviewAppList reloadData];
-            break;
-        }
-    }
-}
-
-// 应用图标下载失败
-- (void)productMan:(ProductMan *)productMan downloadAppIconFailureOf:(NSString *)appID
-{
-    
-}
-
-
-#pragma mark -
-#pragma mark Private
-
-- (void)getAppList
-{
-    //iPhone应用列表状态
-    if (_biPhoneAppList) {
-        if (!_bSendiPhoneAppList) {
-            //获取iPhone应用列表
-            [_productMan getOuriPhoneAppList:self.appleID];
-            //
-            _bSendiPhoneAppList = YES;
-            _bReceiveiPhoneAppList = NO;
-            //清空原有数据
-            [_marrayiPhoneAppItem removeAllObjects];
-            [_tableviewAppList reloadData];
-        }
-    }
-    //iPad应用列表状态
-    else {
-        if (!_bSendiPadAppList) {
-            //获取iPad应用列表
-            [_productMan getOuriPadAppList:self.appleID];
-            //
-            _bSendiPadAppList = YES;
-            _bReceiveiPadAppList = NO;
-            //清空原有数据
-            [_marrayiPadAppItem removeAllObjects];
-            [_tableviewAppList reloadData];
-        }
-    }
-    
-    [self.view showActivityWithText:NSLocalizedString(@"Loading...", nil)];
+    [_tableViewApp reloadData];
 }
 
 @end

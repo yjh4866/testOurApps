@@ -12,10 +12,43 @@
 #include <net/if.h>
 #include <net/if_dl.h>
 
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+
+
+// 根据版本号计算一个整数
+NSUInteger versionID(NSString *strVersion)
+{
+    if (nil == strVersion) {
+        return 0;
+    }
+    NSUInteger versionMajor = 0, versionMinor = 0, versionBugFix = 0;
+    //
+    if (strVersion.length == 0) {
+        return 0;
+    }
+    //
+    NSArray *arrayVersion = [strVersion componentsSeparatedByString:@"."];
+    //versionMajor
+    if (arrayVersion.count > 0) {
+        versionMajor = [[arrayVersion objectAtIndex:0] intValue];
+    }
+    //versionMinor
+    if (arrayVersion.count > 1) {
+        versionMinor = [[arrayVersion objectAtIndex:1] intValue];
+    }
+    //versionBugFix
+    if (arrayVersion.count > 2) {
+        versionBugFix = [[arrayVersion objectAtIndex:2] intValue];
+    }
+    //
+    return 10000*versionMajor + 100*versionMinor + versionBugFix;
+}
+
 
 @implementation UIDevice (Custom)
 
-//系统版本号
+// 系统版本号
 + (NSUInteger)systemVersionID
 {
     NSString *systemVersion = [UIDevice currentDevice].systemVersion;
@@ -42,7 +75,7 @@
     return 10000*versionMajor + 100*versionMinor + versionBugFix;
 }
 
-//取MAC地址
+// 取MAC地址
 + (NSString *)macAddress
 {
 	int                    mib[6];
@@ -75,6 +108,7 @@
 	
 	if (sysctl(mib, 6, buf, &len, NULL, 0) < 0) {
 		//printf("Error: sysctl, take 2");
+        free(buf);
 		return nil;
 	}
 	
@@ -87,7 +121,30 @@
     //                       *ptr, *(ptr+1), *(ptr+2), *(ptr+3), *(ptr+4), *(ptr+5)];
 	free(buf);
 	return [outstring uppercaseString];
-	
+}
+
+// 局域网IP
++ (NSString *)localIPAddress
+{
+    NSString *localIP = nil;
+    struct ifaddrs *addrs;
+    if (getifaddrs(&addrs)==0) {
+        const struct ifaddrs *cursor = addrs;
+        while (cursor != NULL) {
+            if (cursor->ifa_addr->sa_family == AF_INET && (cursor->ifa_flags & IFF_LOOPBACK) == 0)
+            {
+                //NSString *name = [NSString stringWithUTF8String:cursor->ifa_name];
+                //if ([name isEqualToString:@"en0"]) // Wi-Fi adapter
+                {
+                    localIP = [NSString stringWithUTF8String:inet_ntoa(((struct sockaddr_in *)cursor->ifa_addr)->sin_addr)];
+                    break;
+                }
+            }
+            cursor = cursor->ifa_next;
+        }
+        freeifaddrs(addrs);
+    }
+    return localIP;
 }
 
 @end
