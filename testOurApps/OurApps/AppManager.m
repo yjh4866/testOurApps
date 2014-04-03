@@ -71,7 +71,7 @@ typedef NS_ENUM(NSUInteger, AppManagerNetType) {
 // 网络数据下载失败
 - (void)httpConnect:(HTTPConnection *)httpConnect error:(NSError *)error with:(NSDictionary *)dicParam
 {
-    AppManagerNetType netType = [[dicParam objectForKey:@"net"] intValue];
+    AppManagerNetType netType = [[dicParam objectForKey:@"type"] intValue];
     switch (netType) {
         case AppManagerNetType_AppList:
         {
