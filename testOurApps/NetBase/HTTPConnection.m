@@ -43,6 +43,7 @@
 
 - (void)dealloc
 {
+    self.delegate = nil;
     //清空任务
     [self clearRequest];
     //
