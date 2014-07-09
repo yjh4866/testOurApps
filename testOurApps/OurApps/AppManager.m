@@ -144,7 +144,8 @@ typedef NS_ENUM(NSUInteger, AppManagerNetType) {
     appInfo.appUrl = dicAppInfo[@"url"];
     appInfo.appTinyUrl = dicAppInfo[@"tinyUrl"];
     appInfo.appVersion = dicAppInfo[@"version"];
-    appInfo.releaseDate = dicAppInfo[@"release_date"];
+    appInfo.createDate = dicAppInfo[@"release_date"];
+    appInfo.releaseDate = dicAppInfo[@"posted"];
     // 价格
     NSArray *arrPrice = dicAppInfo[@"offers"];
     for (NSDictionary *dicPrice in arrPrice) {

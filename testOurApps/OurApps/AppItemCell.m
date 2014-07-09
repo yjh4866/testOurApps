@@ -101,7 +101,8 @@
 {
     if ([keyPath isEqualToString:@"self.appInfo"]) {
         _imageViewIcon.image = nil;
-        [_imageViewIcon loadImageFromCachePath:[self.appInfo iconPath] orPicUrl:self.appInfo.iconUrl];
+        [_imageViewIcon loadImageFromCachePath:[self.appInfo iconPath]
+                                      orPicUrl:self.appInfo.iconUrl];
         _labelName.text = self.appInfo.appName;
         _labelVersion.text = self.appInfo.appVersion;
         _labelReleaseDate.text = self.appInfo.releaseDate;

@@ -21,6 +21,7 @@
     self.appUrl = nil;
     self.appTinyUrl = nil;
     self.appVersion = nil;
+    self.createDate = nil;
     self.releaseDate = nil;
     self.iconUrl = nil;
     self.price = nil;

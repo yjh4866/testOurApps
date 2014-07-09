@@ -16,6 +16,7 @@
 @property (nonatomic, retain) NSString *appUrl;
 @property (nonatomic, retain) NSString *appTinyUrl;
 @property (nonatomic, retain) NSString *appVersion;
+@property (nonatomic, retain) NSString *createDate;
 @property (nonatomic, retain) NSString *releaseDate;
 @property (nonatomic, retain) NSString *iconUrl;
 @property (nonatomic, retain) NSString *price;
