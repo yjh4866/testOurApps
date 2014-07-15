@@ -1,9 +1,9 @@
 //
 //  UIImageView+Cache.m
-//  
 //
-//  Created by CocoaChina_yangjh on 13-12-17.
-//  Copyright (c) 2013年 CocoaChina. All rights reserved.
+//
+//  Created by Jianhong Yang on 13-12-17.
+//  Copyright (c) 2013年 __MyCompanyName__. All rights reserved.
 //
 
 #import "UIImageView+Cache.h"
@@ -71,9 +71,8 @@ NSString *transferFileNameFromURL(NSString *url)
 }
 
 - (void)downloadFile:(NSString *)filePath from:(NSString *)url showOn:(UIImageView *)imageView
+          withResult:(UIImageViewDownlaodImageResult)downloadResult
 {
-    // 创建参数字典
-    NSDictionary *dicNewParam = @{@"view": imageView, @"path": filePath, @"url": url};
     // 取出url相应的任务列表
     NSMutableArray *marray = [_mdicURLKey objectForKey:url];
     if (nil == marray) {
@@ -81,10 +80,40 @@ NSString *transferFileNameFromURL(NSString *url)
         [_mdicURLKey setObject:marray forKey:url];
     }
     // 加入下载任务
-    [marray addObject:dicNewParam];
+    if (downloadResult) {
+        UIImageViewDownlaodImageResult result = [downloadResult copy];
+        [marray addObject:@{@"view": imageView, @"path": filePath, @"block": result}];
+        [result release];
+    }
+    else {
+        [marray addObject:@{@"view": imageView, @"path": filePath}];
+    }
     // 该url未下载才会下载
     if (marray.count == 1) {
-        [_httpDownload requestWebDataWithURL:url andParam:dicNewParam cache:YES priority:YES];
+        [_httpDownload requestWebDataWithURL:url andParam:@{@"url": url} cache:YES priority:YES];
+    }
+}
+
+- (void)cancelDownload:(UIImageView *)imageView
+{
+    NSArray *arrKey = [_mdicURLKey allKeys];
+    // 遍历所有url
+    for (NSString *strKey in arrKey) {
+        NSMutableArray *marray = [_mdicURLKey objectForKey:strKey];
+        // 找url对应的任务列表
+        for (int i = 0; i < marray.count; i++) {
+            NSDictionary *dic = marray[i];
+            // 找到需要取消的UIImageView
+            if (dic[@"view"] == imageView) {
+                [marray removeObjectAtIndex:i];
+                // 只有这一个下载则要取消下载任务
+                if (0 == marray) {
+                    [_httpDownload cancelRequest:@{@"url": strKey}];
+                    [_mdicURLKey removeObjectForKey:strKey];
+                }
+                return;
+            }
+        }
     }
 }
 
@@ -95,32 +124,55 @@ NSString *transferFileNameFromURL(NSString *url)
 - (void)httpConnect:(HTTPConnection *)httpConnect error:(NSError *)error with:(NSDictionary *)dicParam
 {
     NSString *url = [dicParam objectForKey:@"url"];
-    NSMutableArray *marray = [_mdicURLKey objectForKey:url];
+    NSArray *array = [_mdicURLKey objectForKey:url];
     // 该url的图片均下载失败
-    [marray removeAllObjects];
+    for (NSDictionary *dic in array) {
+        // 下载失败回调
+        UIImageViewDownlaodImageResult downloadResult = dic[@"block"];
+        if (downloadResult) {
+            downloadResult(dic[@"view"], dic[@"url"], error);
+        }
+    }
+    [_mdicURLKey removeObjectForKey:url];
 }
 
 // 网络数据下载完成
 - (void)httpConnect:(HTTPConnection *)httpConnect finish:(NSData *)data with:(NSDictionary *)dicParam
 {
     NSString *url = [dicParam objectForKey:@"url"];
-    NSMutableArray *marray = [_mdicURLKey objectForKey:url];
+    NSArray *array = [_mdicURLKey objectForKey:url];
     // 创建图片对象
     UIImage *image = [[UIImage alloc] initWithData:data];
-    if (image) {
         // 相应的所有下载任务都算完成
-        for (NSDictionary *dic in marray) {
+    if (image) {
+        for (NSDictionary *dic in array) {
             // 保存
-            NSString *filePath = [dic objectForKey:@"path"];
+            NSString *filePath = dic[@"path"];
             [data writeToFile:filePath atomically:YES];
             // 显示图片
-            UIImageView *imageView = [dic objectForKey:@"view"];
+            UIImageView *imageView = dic[@"view"];
             imageView.image = image;
+            // 下载成功回调
+            UIImageViewDownlaodImageResult downloadResult = dic[@"block"];
+            if (downloadResult) {
+                downloadResult(imageView, url, nil);
+            }
+        }
+    }
+    else {
+        NSError *error = [NSError errorWithDomain:@"ImageView" code:0
+                                         userInfo:@{NSLocalizedDescriptionKey: @"图片数据错误"}];
+        for (NSDictionary *dic in array) {
+            // 下载失败回调
+            UIImageViewDownlaodImageResult downloadResult = dic[@"block"];
+            if (downloadResult) {
+                downloadResult(dic[@"view"], url, error);
+            }
         }
     }
     [image release];
     // 清空任务
-    [marray removeAllObjects];
+    [_mdicURLKey removeObjectForKey:url];
 }
 
 @end
@@ -128,7 +180,23 @@ NSString *transferFileNameFromURL(NSString *url)
 
 #pragma mark - UIImageView (Cache)
 
+#define CachePath_UIImageView [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Caches/UIImageView"]
+
 @implementation UIImageView (Cache)
+
+/**
+ *	@brief	清除UIImageView的缓存
+ */
++ (void)clearCacheOfUIImageView
+{
+    NSString *cachePath = CachePath_UIImageView;
+    // 删除缓存目录下的所有文件
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSArray *array = [fileManager subpathsAtPath:cachePath];
+    for (NSString *fileName in array) {
+        [fileManager removeItemAtPath:[cachePath stringByAppendingPathComponent:fileName] error:nil];
+    }
+}
 
 /**
  *	@brief	设置图片路径和网址（不全为空）
@@ -138,9 +206,21 @@ NSString *transferFileNameFromURL(NSString *url)
  */
 - (void)loadImageFromCachePath:(NSString *)filePath orPicUrl:(NSString *)picUrl
 {
+    [self loadImageFromCachePath:filePath orPicUrl:picUrl withDownloadResult:nil];
+}
+
+/**
+ *	@brief	设置图片路径和网址（不全为空）
+ *
+ *	@param 	filePath 	缓存图片保存路径
+ *	@param 	picUrl 	图片下载地址
+ *	@param 	result 	图片下载结束后的block回调
+ */
+- (void)loadImageFromCachePath:(NSString *)filePath orPicUrl:(NSString *)picUrl withDownloadResult:(UIImageViewDownlaodImageResult)downloadResult
+{
     // 无路径则使用默认路径
     if (filePath.length == 0) {
-        NSString *cachePath = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Caches/AppIcons"];
+        NSString *cachePath = CachePath_UIImageView;
         NSFileManager *fileManager = [NSFileManager defaultManager];
         if (![fileManager fileExistsAtPath:cachePath]) {
             [fileManager createDirectoryAtPath:cachePath withIntermediateDirectories:YES
@@ -157,8 +237,17 @@ NSString *transferFileNameFromURL(NSString *url)
     }
     // 缓存图片没读取到，且url存在，则下载
     else if (picUrl) {
-        [[UIImageViewManager sharedInstance] downloadFile:filePath from:picUrl showOn:self];
+        [[UIImageViewManager sharedInstance] downloadFile:filePath from:picUrl showOn:self
+                                               withResult:downloadResult];
     }
+}
+
+/**
+ *	@brief	取消下载图片
+ */
+- (void)cancelDownload
+{
+    [[UIImageViewManager sharedInstance] cancelDownload:self];
 }
 
 @end
