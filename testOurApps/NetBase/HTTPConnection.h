@@ -19,15 +19,16 @@
 // 判断指定参数的网络请求是否存在
 - (BOOL)requestIsExist:(NSDictionary *)dicParam;
 
+// 指定url是否在请求中
+- (BOOL)urlIsRequesting:(NSString *)url;
+
 // 根据URL获取Web数据
-// cache  获取网页数据用YES，下载文件数据用NO（文件数据不会回传）
-- (BOOL)requestWebDataWithURL:(NSString *)strURL andParam:(NSDictionary *)dicParam
-                        cache:(BOOL)cache priority:(BOOL)priority;
+// dicParam 可用于回传数据。不得为空
+- (BOOL)requestWebDataWithURL:(NSString *)strURL andParam:(NSDictionary *)dicParam;
 
 // 根据URLRequest获取Web数据
-// cache  获取网页数据用YES，下载文件数据用NO（文件数据不会回传）
-- (BOOL)requestWebDataWithRequest:(NSURLRequest *)request andParam:(NSDictionary *)dicParam
-                            cache:(BOOL)cache priority:(BOOL)priority;
+// dicParam 可用于回传数据。不得为空
+- (BOOL)requestWebDataWithRequest:(NSURLRequest *)request andParam:(NSDictionary *)dicParam;
 
 // 取消网络请求
 - (BOOL)cancelRequest:(NSDictionary *)dicParam;
@@ -46,7 +47,7 @@
 - (void)httpConnect:(HTTPConnection *)httpConnect error:(NSError *)error with:(NSDictionary *)dicParam;
 
 // 服务器返回的HTTP信息头
-- (void)httpConnect:(HTTPConnection *)httpConnect receiveResponseWithStatusCode:(NSInteger)statusCode 
+- (void)httpConnect:(HTTPConnection *)httpConnect receiveResponseWithStatusCode:(NSInteger)statusCode
  andAllHeaderFields:(NSDictionary *)dicAllHeaderFields with:(NSDictionary *)dicParam;
 
 // 接收到部分数据
@@ -60,7 +61,7 @@
 
 #ifdef DEBUG
 
-#define HTTPLog(fmt,...)     NSLog((@"HTTP->%s(%d):"fmt),__PRETTY_FUNCTION__,__LINE__,##__VA_ARGS__)
+#define HTTPLog(fmt,...)     NSLog((@"HTTP->%s(%d):" fmt),__PRETTY_FUNCTION__,__LINE__,##__VA_ARGS__)
 
 #else
 

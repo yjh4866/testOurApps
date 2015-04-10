@@ -62,7 +62,7 @@ typedef NS_ENUM(NSUInteger, AppManagerNetType) {
     [mURLRequest setCachePolicy:NSURLRequestReturnCacheDataElseLoad];
     [mURLRequest setValue:@"iTunes-iPad/6.0 (6; 16GB; dt:73)" forHTTPHeaderField:@"User-Agent"];
     //
-    [_httpConnection requestWebDataWithRequest:mURLRequest andParam:@{@"type": @(AppManagerNetType_AppList), @"id": artistID} cache:YES priority:YES];
+    [_httpConnection requestWebDataWithRequest:mURLRequest andParam:@{@"type": @(AppManagerNetType_AppList), @"id": artistID}];
 }
 
 

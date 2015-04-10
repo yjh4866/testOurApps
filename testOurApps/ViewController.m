@@ -64,7 +64,7 @@
 - (void)clickButton1:(id)sender
 {
     OurAppsVC *ourAppsVC = [[OurAppsVC alloc] init];
-    ourAppsVC.artistID = @"441076723";
+    ourAppsVC.artistID = @"670114911";
     ourAppsVC.delegate = self;
     //
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:ourAppsVC];
@@ -81,7 +81,7 @@
 - (void)clickButton2:(id)sender
 {
     OurAppsVC *ourAppsVC = [[OurAppsVC alloc] init];
-    ourAppsVC.artistID = @"446324237";
+    ourAppsVC.artistID = @"670114911";
     ourAppsVC.delegate = self;
     [self.navigationController pushViewController:ourAppsVC animated:YES];
     [ourAppsVC release];

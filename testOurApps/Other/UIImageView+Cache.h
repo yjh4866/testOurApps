@@ -14,7 +14,7 @@ NSString *transferFileNameFromURL(NSString *url);
 
 // 图片下载结束后的block回调
 // error只在图片下载失败时有效，表示下载失败时的错误
-typedef void (^UIImageViewDownlaodImageResult) (UIImageView *imageView, NSString *picUrl, NSError *error);
+typedef void (^UIImageViewDownlaodImageResult) (UIImageView *imageView, NSString *picUrl, float progress, BOOL finished, NSError *error);
 
 @interface UIImageView (Cache)
 
