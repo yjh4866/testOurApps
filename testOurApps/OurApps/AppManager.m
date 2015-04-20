@@ -8,7 +8,6 @@
 
 #import "AppManager.h"
 #import "HTTPConnection.h"
-#import "JSONKit.h"
 
 #import "AppInfoItem.h"
 
@@ -71,7 +70,7 @@ typedef NS_ENUM(NSUInteger, AppManagerNetType) {
 // 网络数据下载失败
 - (void)httpConnect:(HTTPConnection *)httpConnect error:(NSError *)error with:(NSDictionary *)dicParam
 {
-    AppManagerNetType netType = [[dicParam objectForKey:@"type"] intValue];
+    AppManagerNetType netType = [dicParam[@"type"] intValue];
     switch (netType) {
         case AppManagerNetType_AppList:
         {
@@ -87,14 +86,14 @@ typedef NS_ENUM(NSUInteger, AppManagerNetType) {
 // 网络数据下载完成
 - (void)httpConnect:(HTTPConnection *)httpConnect finish:(NSData *)data with:(NSDictionary *)dicParam
 {
-    AppManagerNetType netType = [[dicParam objectForKey:@"type"] intValue];
+    AppManagerNetType netType = [dicParam[@"type"] intValue];
     switch (netType) {
         case AppManagerNetType_AppList:
         {
             NSMutableArray *marriPhoneApp = [NSMutableArray array];
             NSMutableArray *marriPadApp = [NSMutableArray array];
             //
-            NSDictionary *dicData = [data objectFromJSONData];
+            NSDictionary *dicData = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
             NSArray *arrItem = dicData[@"stack"];
             for (NSDictionary *dicItem in arrItem) {
                 NSString *titleItem = dicItem[@"title"];

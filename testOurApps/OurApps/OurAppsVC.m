@@ -10,6 +10,7 @@
 #import "AppItemCell.h"
 #import "UIView+MBProgressHUD.h"
 #import "AppManager.h"
+#import "UIScrollView+PullRefresh.h"
 
 
 @interface OurAppsVC () <UITableViewDataSource, UITableViewDelegate, AppManagerDelegate> {
@@ -48,9 +49,12 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    // Do any additional setup after loading the view.
-    //
     self.navigationItem.title = @"产品列表";
+    // Do any additional setup after loading the view.
+    if ([self respondsToSelector:@selector(setEdgesForExtendedLayout:)]) {
+        self.edgesForExtendedLayout = UIRectEdgeNone;
+    }
+    //
     // 当前为导航栏根视图控制器，另外添加一个关闭按钮
     if (self.navigationController.viewControllers[0] == self) {
         UIBarButtonItem *itemClose = [[UIBarButtonItem alloc] initWithTitle:@"关闭"
@@ -60,13 +64,6 @@
         self.navigationItem.leftBarButtonItem = itemClose;
         [itemClose release];
     }
-    // 导航栏右边的按钮用于刷新
-    UIBarButtonItem *itemRefresh = [[UIBarButtonItem alloc]
-                                    initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh
-                                    target:self
-                                    action:@selector(clickRefresh)];
-    self.navigationItem.rightBarButtonItem = itemRefresh;
-    [itemRefresh release];
     
     //
     if (nil == _tableViewApp) {
@@ -93,7 +90,6 @@
         self.iPhoneAppList = NO;
     }
     
-    [self clickRefresh];
 }
 
 - (void)didReceiveMemoryWarning
@@ -107,6 +103,13 @@
     [super viewWillAppear:animated];
     
     _tableViewApp.frame = self.view.bounds;
+    // viewDidDisappear处会设置为nil，故需要在设置下拉刷新
+    [_tableViewApp showHeaderRefresh];
+    [_tableViewApp setStartBlockOfHeaderRefresh:^(UIScrollView *scrollView) {
+        [self.view showActivityWithText:@"加载中..."];
+        [_appManager getAppListOf:self.artistID];
+    }];
+    [_tableViewApp startHeaderRefresh];
 }
 
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
@@ -114,6 +117,14 @@
     [super willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
     
     _tableViewApp.frame = self.view.bounds;
+}
+
+- (void)viewDidDisappear:(BOOL)animated
+{
+    [super viewDidDisappear:animated];
+    // 必须设置为nil才能释放当前类
+    [_tableViewApp setStartBlockOfHeaderRefresh:nil];
+    [_tableViewApp removeHeaderRefresh];
 }
 
 - (void)dealloc
@@ -144,12 +155,6 @@
     // 只有iPad才会调用到这里，第一项是iPad，最后一项是iPhone
     self.iPhoneAppList = (segCtrl.numberOfSegments-1)==segCtrl.selectedSegmentIndex;
     [_tableViewApp reloadData];
-}
-
-- (void)clickRefresh
-{
-    [self.view showActivityWithText:@"加载中..."];
-    [_appManager getAppListOf:self.artistID];
 }
 
 
@@ -200,6 +205,7 @@
 - (void)appManager:(AppManager *)appManager appListFailure:(NSError *)error
               with:(NSString *)artistID
 {
+    [_tableViewApp endHeaderRefresh];
     [self.view hideActivity];
     [self.view showTextNoActivity:error.localizedDescription timeLength:1.0f];
 }
@@ -208,6 +214,7 @@
 - (void)appManager:(AppManager *)appManager appListSuccessWith:(NSString *)artistID
  withiPhoneAppList:(NSArray *)arriPhoneApp andiPadApplist:(NSArray *)arriPadApp
 {
+    [_tableViewApp endHeaderRefresh];
     [self.view hideActivity];
     [_marriPhoneApp setArray:arriPhoneApp];
     [_marriPadApp setArray:arriPadApp];

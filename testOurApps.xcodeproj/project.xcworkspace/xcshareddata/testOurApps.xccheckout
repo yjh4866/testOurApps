@@ -12,6 +12,8 @@
 	<dict>
 		<key>4A3F8F9E91D5AE8E7099EBAB9C26B7BE895AF75D</key>
 		<string>https://github.com/yjh4866/testOurApps.git</string>
+		<key>F4187DCECC3C65452CA93BC69A5E6207FFCABB11</key>
+		<string>https://github.com/yjh4866/ExceedMVC.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>testOurApps.xcodeproj</string>
@@ -19,6 +21,8 @@
 	<dict>
 		<key>4A3F8F9E91D5AE8E7099EBAB9C26B7BE895AF75D</key>
 		<string>../..</string>
+		<key>F4187DCECC3C65452CA93BC69A5E6207FFCABB11</key>
+		<string>../../../ExceedMVC</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
 	<string>https://github.com/yjh4866/testOurApps.git</string>
@@ -28,6 +32,14 @@
 	<string>4A3F8F9E91D5AE8E7099EBAB9C26B7BE895AF75D</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>F4187DCECC3C65452CA93BC69A5E6207FFCABB11</string>
+			<key>IDESourceControlWCCName</key>
+			<string>ExceedMVC</string>
+		</dict>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
