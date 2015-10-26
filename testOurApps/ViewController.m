@@ -28,6 +28,9 @@
 {
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
+    if ([self respondsToSelector:@selector(setEdgesForExtendedLayout:)]) {
+        self.edgesForExtendedLayout = UIRectEdgeNone;
+    }
     
     //
     UIButton *button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
@@ -66,15 +69,11 @@
     OurAppsVC *ourAppsVC = [[OurAppsVC alloc] init];
     ourAppsVC.artistID = @"670114911";
     ourAppsVC.delegate = self;
-    //
-    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:ourAppsVC];
-    if ([UIDevice systemVersionID] < __IPHONE_5_0) {
-        [self presentModalViewController:nav animated:YES];
-    }
-    else {
+    {
+        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:ourAppsVC];
         [self presentViewController:nav animated:YES completion:nil];
+        [nav release];
     }
-    [nav release];
     [ourAppsVC release];
 }
 

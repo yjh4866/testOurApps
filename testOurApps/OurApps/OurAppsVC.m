@@ -54,7 +54,7 @@
     if ([self respondsToSelector:@selector(setEdgesForExtendedLayout:)]) {
         self.edgesForExtendedLayout = UIRectEdgeNone;
     }
-    //
+    
     // 当前为导航栏根视图控制器，另外添加一个关闭按钮
     if (self.navigationController.viewControllers[0] == self) {
         UIBarButtonItem *itemClose = [[UIBarButtonItem alloc] initWithTitle:@"关闭"
@@ -112,6 +112,13 @@
     [_tableViewApp startHeaderRefresh];
 }
 
+- (void)viewDidAppear:(BOOL)animated
+{
+    [super viewDidAppear:animated];
+    
+    _tableViewApp.frame = self.view.bounds;
+}
+
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
 {
     [super willAnimateRotationToInterfaceOrientation:toInterfaceOrientation duration:duration];
@@ -122,6 +129,7 @@
 - (void)viewDidDisappear:(BOOL)animated
 {
     [super viewDidDisappear:animated];
+    
     // 必须设置为nil才能释放当前类
     [_tableViewApp setStartBlockOfHeaderRefresh:nil];
     [_tableViewApp removeHeaderRefresh];

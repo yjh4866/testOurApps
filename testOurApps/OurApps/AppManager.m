@@ -37,6 +37,7 @@ typedef NS_ENUM(NSUInteger, AppManagerNetType) {
 
 - (void)dealloc
 {
+    _httpConnection.delegate = nil;
     [_httpConnection release];
     
     [super dealloc];
