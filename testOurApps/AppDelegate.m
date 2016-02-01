@@ -10,30 +10,22 @@
 
 #import "ViewController.h"
 
+@interface AppDelegate ()
+
+@end
+
 @implementation AppDelegate
-
-@synthesize window = _window;
-@synthesize viewController = _viewController;
-
-- (void)dealloc
-{
-    [_window release];
-    [_viewController release];
-    [super dealloc];
-}
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-    self.window = [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]] autorelease];
+    self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     // Override point for customization after application launch.
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
         ViewController *vc = [[ViewController alloc] initWithNibName:@"ViewController_iPhone" bundle:nil];
-        self.viewController = [[[UINavigationController alloc] initWithRootViewController:vc] autorelease];
-        [vc release];
+        self.viewController = [[UINavigationController alloc] initWithRootViewController:vc];
     } else {
         ViewController *vc = [[ViewController alloc] initWithNibName:@"ViewController_iPad" bundle:nil];
-        self.viewController = [[[UINavigationController alloc] initWithRootViewController:vc] autorelease];
-        [vc release];
+        self.viewController = [[UINavigationController alloc] initWithRootViewController:vc];
     }
     self.window.rootViewController = self.viewController;
     [self.window makeKeyAndVisible];

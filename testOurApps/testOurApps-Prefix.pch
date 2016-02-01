@@ -15,5 +15,5 @@
 
 
 #import "UIDevice+Custom.h"
-#import "UIImageView+Cache.h"
+#import "UIImageView+NBL.h"
 #import "UIView+MBProgressHUD.h"

@@ -8,7 +8,7 @@
 
 #import "AppItemCell.h"
 #import <QuartzCore/QuartzCore.h>
-#import "UIImageView+Cache.h"
+#import "UIImageView+NBL.h"
 #import "AppInfoItem.h"
 
 #define Size_AppIcon            75.0f
@@ -18,15 +18,12 @@
 #define Left_AppDetailItem      (Left_AppIcon+Size_AppIcon+Left_AppIcon)
 #define Height_AppDetailItem    (Size_AppIcon/4.0f)
 
-@interface AppItemCell () {
-    
-    UIImageView *_imageViewIcon;
-    UILabel *_labelName;
-    UILabel *_labelVersion;
-    UILabel *_labelReleaseDate;
-    UILabel *_labelPrice;
-}
-
+@interface AppItemCell ()
+@property (nonatomic, strong) UIImageView *imageViewIcon;
+@property (nonatomic, strong) UILabel *labelName;
+@property (nonatomic, strong) UILabel *labelVersion;
+@property (nonatomic, strong) UILabel *labelReleaseDate;
+@property (nonatomic, strong) UILabel *labelPrice;
 @end
 
 @implementation AppItemCell
@@ -37,31 +34,31 @@
     if (self) {
         // Initialization code
         // 应用图标
-        _imageViewIcon = [[UIImageView alloc] initWithFrame:Frame_AppIcon];
-        _imageViewIcon.backgroundColor = [UIColor lightGrayColor];
-		_imageViewIcon.layer.masksToBounds = YES;
-		_imageViewIcon.layer.cornerRadius = 10.0f;
-        [self.contentView addSubview:_imageViewIcon];
+        self.imageViewIcon = [[UIImageView alloc] initWithFrame:Frame_AppIcon];
+        self.imageViewIcon.backgroundColor = [UIColor lightGrayColor];
+		self.imageViewIcon.layer.masksToBounds = YES;
+		self.imageViewIcon.layer.cornerRadius = 10.0f;
+        [self.contentView addSubview:self.imageViewIcon];
         // 应用名称
         CGRect frameDetailItem = CGRectMake(Left_AppDetailItem, Top_AppIcon, self.bounds.size.width-Left_AppDetailItem-Left_AppIcon, Height_AppDetailItem);
-        _labelName = [[UILabel alloc] initWithFrame:frameDetailItem];
-        _labelName.backgroundColor = [UIColor clearColor];
-        [self addSubview:_labelName];
+        self.labelName = [[UILabel alloc] initWithFrame:frameDetailItem];
+        self.labelName.backgroundColor = [UIColor clearColor];
+        [self addSubview:self.labelName];
         // 应用版本
         frameDetailItem.origin.y += Height_AppDetailItem;
-        _labelVersion = [[UILabel alloc] initWithFrame:frameDetailItem];
-        _labelVersion.backgroundColor = [UIColor clearColor];
-        [self.contentView addSubview:_labelVersion];
+        self.labelVersion = [[UILabel alloc] initWithFrame:frameDetailItem];
+        self.labelVersion.backgroundColor = [UIColor clearColor];
+        [self.contentView addSubview:self.labelVersion];
         // 当前版本发布日期
         frameDetailItem.origin.y += Height_AppDetailItem;
-        _labelReleaseDate = [[UILabel alloc] initWithFrame:frameDetailItem];
-        _labelReleaseDate.backgroundColor = [UIColor clearColor];
-        [self.contentView addSubview:_labelReleaseDate];
+        self.labelReleaseDate = [[UILabel alloc] initWithFrame:frameDetailItem];
+        self.labelReleaseDate.backgroundColor = [UIColor clearColor];
+        [self.contentView addSubview:self.labelReleaseDate];
         // 价格
         frameDetailItem.origin.y += Height_AppDetailItem;
-        _labelPrice = [[UILabel alloc] initWithFrame:frameDetailItem];
-        _labelPrice.backgroundColor = [UIColor clearColor];
-        [self.contentView addSubview:_labelPrice];
+        self.labelPrice = [[UILabel alloc] initWithFrame:frameDetailItem];
+        self.labelPrice.backgroundColor = [UIColor clearColor];
+        [self.contentView addSubview:self.labelPrice];
         
         [self addObserver:self forKeyPath:@"self.appInfo"
                   options:NSKeyValueObservingOptionNew context:nil];
@@ -84,14 +81,6 @@
 - (void)dealloc
 {
     [self removeObserver:self forKeyPath:@"self.appInfo"];
-    //
-    [_imageViewIcon release];
-    [_labelName release];
-    [_labelVersion release];
-    [_labelReleaseDate release];
-    [_labelPrice release];
-    
-    [super dealloc];
 }
 
 
@@ -100,13 +89,13 @@
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
     if ([keyPath isEqualToString:@"self.appInfo"]) {
-        _imageViewIcon.image = nil;
-        [_imageViewIcon loadImageFromCachePath:[self.appInfo iconPath]
-                                      orPicUrl:self.appInfo.iconUrl];
-        _labelName.text = self.appInfo.appName;
-        _labelVersion.text = self.appInfo.appVersion;
-        _labelReleaseDate.text = self.appInfo.releaseDate;
-        _labelPrice.text = self.appInfo.price;
+        self.imageViewIcon.image = nil;
+        [self.imageViewIcon loadImageFromCachePath:[self.appInfo iconPath]
+                                          orPicUrl:self.appInfo.iconUrl];
+        self.labelName.text = self.appInfo.appName;
+        self.labelVersion.text = self.appInfo.appVersion;
+        self.labelReleaseDate.text = self.appInfo.releaseDate;
+        self.labelPrice.text = self.appInfo.price;
     }
 }
 

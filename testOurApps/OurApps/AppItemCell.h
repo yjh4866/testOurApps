@@ -15,6 +15,6 @@
 
 @interface AppItemCell : UITableViewCell
 
-@property (nonatomic, retain) AppInfoItem *appInfo;
+@property (nonatomic, strong) AppInfoItem *appInfo;
 
 @end

@@ -72,9 +72,7 @@
     {
         UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:ourAppsVC];
         [self presentViewController:nav animated:YES completion:nil];
-        [nav release];
     }
-    [ourAppsVC release];
 }
 
 - (void)clickButton2:(id)sender
@@ -83,7 +81,6 @@
     ourAppsVC.artistID = @"670114911";
     ourAppsVC.delegate = self;
     [self.navigationController pushViewController:ourAppsVC animated:YES];
-    [ourAppsVC release];
 }
 
 
@@ -92,12 +89,7 @@
 // 关闭
 - (void)ourAppsVCClose:(OurAppsVC *)ourAppsVC
 {
-    if ([UIDevice systemVersionID] < __IPHONE_5_0) {
-        [self dismissModalViewControllerAnimated:YES];
-    }
-    else {
-        [self dismissViewControllerAnimated:YES completion:nil];
-    }
+    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 // 应用项被点击

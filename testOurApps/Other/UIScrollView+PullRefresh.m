@@ -25,23 +25,15 @@ typedef NS_ENUM(unsigned int, RefreshViewStatus) {
 
 @interface RefreshView ()
 @property (nonatomic, assign) BOOL isHeaderRefresh; // 是否为头部刷新视图
-#if __has_feature(objc_arc)
+
 @property (nonatomic, strong) UILabel *labelStatus;
 @property (nonatomic, strong) UILabel *labelLastUpdateTime;
 @property (nonatomic, strong) UIImageView *imageViewArrow;
 @property (nonatomic, strong) UIActivityIndicatorView *activityView;
-@property (nonatomic, strong) StartRefreshing startRefreshing;
-@property (nonatomic, strong) FinishRefreshing finishRefreshing;
-@property (nonatomic, strong) NSDate *dateRefresh;
-#else
-@property (nonatomic, retain) UILabel *labelStatus;
-@property (nonatomic, retain) UILabel *labelLastUpdateTime;
-@property (nonatomic, retain) UIImageView *imageViewArrow;
-@property (nonatomic, retain) UIActivityIndicatorView *activityView;
 @property (nonatomic, copy) StartRefreshing startRefreshing;
 @property (nonatomic, copy) FinishRefreshing finishRefreshing;
-@property (nonatomic, retain) NSDate *dateRefresh;
-#endif
+@property (nonatomic, strong) NSDate *dateRefresh;
+
 @property (nonatomic, readonly) BOOL dragRefresh;
 @property (nonatomic, readonly) BOOL refreshing;
 @property (nonatomic, assign) RefreshViewStatus refreshStatus;
@@ -86,20 +78,13 @@ typedef NS_ENUM(unsigned int, RefreshViewStatus) {
         activityView.autoresizingMask = imageViewArrow.autoresizingMask;
         [self addSubview:activityView];
         self.activityView = activityView;
-        // 统一释放
-#if __has_feature(objc_arc)
-#else
-        [labelStatus release];
-        [labelLastUpdateTime release];
-        [imageViewArrow release];
-        [activityView release];
-#endif
+        
         _dragRefresh = NO;
         _refreshing = NO;
         _labelLastUpdateTime.text = @"";
-        [self addObserver:self forKeyPath:@"self.isHeaderRefresh"
+        [self addObserver:self forKeyPath:@"isHeaderRefresh"
                   options:NSKeyValueObservingOptionNew context:nil];
-        [self addObserver:self forKeyPath:@"self.refreshStatus"
+        [self addObserver:self forKeyPath:@"refreshStatus"
                   options:NSKeyValueObservingOptionNew context:nil];
     }
     return self;
@@ -111,8 +96,8 @@ typedef NS_ENUM(unsigned int, RefreshViewStatus) {
 }
 - (void)dealloc
 {
-    [self removeObserver:self forKeyPath:@"self.isHeaderRefresh"];
-    [self removeObserver:self forKeyPath:@"self.refreshStatus"];
+    [self removeObserver:self forKeyPath:@"isHeaderRefresh"];
+    [self removeObserver:self forKeyPath:@"refreshStatus"];
     //
     self.startRefreshing = nil;
     self.finishRefreshing = nil;
@@ -123,10 +108,6 @@ typedef NS_ENUM(unsigned int, RefreshViewStatus) {
     self.startRefreshing = nil;
     self.finishRefreshing = nil;
     self.dateRefresh = nil;
-#if __has_feature(objc_arc)
-#else
-    [super dealloc];
-#endif
 }
 - (void)layoutSubviews
 {
@@ -145,19 +126,21 @@ typedef NS_ENUM(unsigned int, RefreshViewStatus) {
                                            sizeArrow.width, sizeArrow.height);
     self.activityView.center = self.imageViewArrow.center;
 }
-- (void)removeFromSuperview
+- (void)didMoveToSuperview
 {
-    self.startRefreshing = nil;
-    self.finishRefreshing = nil;
-    [super removeFromSuperview];
+    [super didMoveToSuperview];
+    if (nil == self.superview) {
+        self.startRefreshing = nil;
+        self.finishRefreshing = nil;
+    }
 }
 #pragma mark NSKeyValueObserving
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-    if ([keyPath isEqualToString:@"self.isHeaderRefresh"]) {
+    if ([keyPath isEqualToString:@"isHeaderRefresh"]) {
         self.refreshStatus = self.refreshStatus;
     }
-    else if ([keyPath isEqualToString:@"self.refreshStatus"]) {
+    else if ([keyPath isEqualToString:@"refreshStatus"]) {
         switch (self.refreshStatus) {
             case RefreshViewStatus_Normal:
             {
@@ -338,10 +321,6 @@ typedef NS_ENUM(unsigned int, RefreshViewStatus) {
     headerRefreshView = [[RefreshView alloc] initWithFrame:frameRefresh];
     headerRefreshView.isHeaderRefresh = YES;
     [self addSubview:headerRefreshView];
-#if __has_feature(objc_arc)
-#else
-    [headerRefreshView release];
-#endif
     
     // 监听contentOffset
     [self addObserver:self forKeyPath:KVOKeyPath_CSRefreshContentOffset
@@ -376,10 +355,6 @@ typedef NS_ENUM(unsigned int, RefreshViewStatus) {
     footerRefreshView = [[RefreshView alloc] initWithFrame:frameRefresh];
     footerRefreshView.isHeaderRefresh = NO;
     [self addSubview:footerRefreshView];
-#if __has_feature(objc_arc)
-#else
-    [footerRefreshView release];
-#endif
     
     // 监听contentOffset
     [self addObserver:self forKeyPath:KVOKeyPath_CSRefreshContentOffset
@@ -570,10 +545,6 @@ typedef NS_ENUM(unsigned int, RefreshViewStatus) {
         formatter.dateFormat = @"yyyy-MM-dd HH:mm";
     }
     NSString *time = [formatter stringFromDate:refreshView.dateRefresh];
-#if __has_feature(objc_arc)
-#else
-    [formatter release];
-#endif
     
     // 3.显示日期
     refreshView.labelLastUpdateTime.text = [NSString stringWithFormat:@"最后更新：%@", time];

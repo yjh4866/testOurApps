@@ -61,7 +61,6 @@
     //
     UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
     hud.customView = imageView;
-    [imageView release];
     return hud;
 }
 
@@ -77,7 +76,6 @@
     UIImage *image = [UIImage imageNamed:imageName];
     UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
     hud.customView = imageView;
-    [imageView release];
     return hud;
 }
 

@@ -7,41 +7,14 @@
 //
 
 #import "AppManager.h"
-#import "HTTPConnection.h"
+#import "NBLHTTPManager.h"
 
 #import "AppInfoItem.h"
 
-typedef NS_ENUM(NSUInteger, AppManagerNetType) {
-    AppManagerNetType_None,
-    AppManagerNetType_AppList,
-};
-
-@interface AppManager () <HTTPConnectionDelegate> {
-    
-    HTTPConnection *_httpConnection;
-}
-
+@interface AppManager ()
 @end
 
 @implementation AppManager
-
-- (instancetype)init
-{
-    self = [super init];
-    if (self) {
-        _httpConnection = [[HTTPConnection alloc] init];
-        _httpConnection.delegate = self;
-    }
-    return self;
-}
-
-- (void)dealloc
-{
-    _httpConnection.delegate = nil;
-    [_httpConnection release];
-    
-    [super dealloc];
-}
 
 
 #pragma mark - Public
@@ -62,40 +35,16 @@ typedef NS_ENUM(NSUInteger, AppManagerNetType) {
     [mURLRequest setCachePolicy:NSURLRequestReturnCacheDataElseLoad];
     [mURLRequest setValue:@"iTunes-iPad/6.0 (6; 16GB; dt:73)" forHTTPHeaderField:@"User-Agent"];
     //
-    [_httpConnection requestWebDataWithRequest:mURLRequest andParam:@{@"type": @(AppManagerNetType_AppList), @"id": artistID}];
-}
-
-
-#pragma mark - HTTPConnectionDelegate
-
-// 网络数据下载失败
-- (void)httpConnect:(HTTPConnection *)httpConnect error:(NSError *)error with:(NSDictionary *)dicParam
-{
-    AppManagerNetType netType = [dicParam[@"type"] intValue];
-    switch (netType) {
-        case AppManagerNetType_AppList:
-        {
-            NSString *artistID = dicParam[@"id"];
+    [[NBLHTTPManager sharedManager] requestObject:NBLResponseObjectType_JSON withRequest:mURLRequest param:@{@"id": artistID} andResult:^(NSHTTPURLResponse *httpResponse, id responseObject, NSError *error, NSDictionary *dicParam) {
+        NSString *artistID = dicParam[@"id"];
+        if (error) {
             [self.delegate appManager:self appListFailure:error with:artistID];
         }
-            break;
-        default:
-            break;
-    }
-}
-
-// 网络数据下载完成
-- (void)httpConnect:(HTTPConnection *)httpConnect finish:(NSData *)data with:(NSDictionary *)dicParam
-{
-    AppManagerNetType netType = [dicParam[@"type"] intValue];
-    switch (netType) {
-        case AppManagerNetType_AppList:
-        {
+        else {
             NSMutableArray *marriPhoneApp = [NSMutableArray array];
             NSMutableArray *marriPadApp = [NSMutableArray array];
-            //
-            NSDictionary *dicData = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
-            NSArray *arrItem = dicData[@"stack"];
+            // 解析app列表
+            NSArray *arrItem = responseObject[@"stack"];
             for (NSDictionary *dicItem in arrItem) {
                 NSString *titleItem = dicItem[@"title"];
                 NSArray *arrAppItem = dicItem[@"content"];
@@ -104,7 +53,6 @@ typedef NS_ENUM(NSUInteger, AppManagerNetType) {
                         AppInfoItem *appInfo = [[AppInfoItem alloc] init];
                         [self translateAppInfoItem:appInfo from:dicAppInfo];
                         [marriPadApp addObject:appInfo];
-                        [appInfo release];
                     }
                 }
                 else if (NSNotFound != [titleItem rangeOfString:@"iPhone"].location) {
@@ -112,25 +60,14 @@ typedef NS_ENUM(NSUInteger, AppManagerNetType) {
                         AppInfoItem *appInfo = [[AppInfoItem alloc] init];
                         [self translateAppInfoItem:appInfo from:dicAppInfo];
                         [marriPhoneApp addObject:appInfo];
-                        [appInfo release];
                     }
                 }
             }
-            //
-            NSString *artistID = dicParam[@"id"];
-            if (nil == dicData || nil == arrItem) {
-                NSError *error = [NSError errorWithDomain:@"" code:-9999 userInfo:@{NSLocalizedDescriptionKey: @"数据错误"}];
-                [self.delegate appManager:self appListFailure:error with:artistID];
-            }
-            else {
-                [self.delegate appManager:self appListSuccessWith:artistID
-                        withiPhoneAppList:marriPhoneApp andiPadApplist:marriPadApp];
-            }
+            // 数据获取成功
+            [self.delegate appManager:self appListSuccessWith:artistID
+                    withiPhoneAppList:marriPhoneApp andiPadApplist:marriPadApp];
         }
-            break;
-        default:
-            break;
-    }
+    }];
 }
 
 
